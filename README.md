@@ -9,9 +9,11 @@ Ripser
 **How to Run**
 
 Empirical results:
+
 ./Run.sh
 
 Numerical Simulation:
+
 Python Simulate.py
 
 **Outputs**
@@ -23,4 +25,4 @@ Empirical results:
 4. Bottleneck distance
 
 Numerical Simulation:
-Comparison between sample complexity from passive learning and query complexity from active learning
+1. Comparison between sample complexity from passive learning and query complexity from active learning
