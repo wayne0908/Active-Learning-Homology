@@ -8,13 +8,9 @@ Ripser
 
 **How to Run**
 
-Empirical results:
+Empirical results: ./Run.sh
 
-./Run.sh
-
-Numerical Simulation:
-
-Python Simulate.py
+Numerical Simulation: Python Simulate.py
 
 **Outputs**
 
