@@ -1,5 +1,6 @@
 import numpy as np 
 import matplotlib.pyplot  as plt 
+from matplotlib.ticker import FormatStrFormatter
 import pdb
 
 def GetIntersection(d, r1, r2):
@@ -173,7 +174,7 @@ def SetPltProp(ax, xn = None, yn=None, title=None, grid = True, legend = True, p
 		ax.set_title(title, fontweight='bold')
 	return ax
 
-def PlotComparison(T, S1, S2):
+def PlotComparison(T, S1, S2, xaxislabel):
 	"""
 	Comparison between sample complexity and query complexity under same delta (failure probability)
 	T: a list of tau 
@@ -181,16 +182,27 @@ def PlotComparison(T, S1, S2):
 	S2: a list of query complexity
 	"""
 	Fig = plt.figure(); ax = Fig.gca(); 
-	ax.semilogy(T, S2, basey=2, c  = 'r', label = 'Active learning', marker = 'o', markersize = 8, linewidth=3)
-	ax.semilogy(T, S1, basey = 2,c  = 'b', label = 'Passive learning', marker = 'o', markersize = 8, linewidth=3)
-	ax = SetPltProp(ax, r'$\tau$', 'Query (Sample) complexity in log scale', pos = 'upper right')
+	# ax.semilogy(T, S2, basey=2, c  = 'r', label = 'Active learning', marker = 'o', markersize = 8, linewidth=3)
+	# ax.semilogy(T, S1, basey = 2,c  = 'b', label = 'Passive learning', marker = 'o', markersize = 8, linewidth=3)
+
+	ax.plot(T, S2/S1,c  = 'b', label = '', marker = 'o', markersize = 8, linewidth=3)
+	ax = SetPltProp(ax, xaxislabel, 'Query complexity to sample complexity', legend = False, pos = 'upper right')
+	ax.ticklabel_format(axis="x", style="sci", scilimits=(0,0))
+	ax.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
 	Fig.show()
 	pdb.set_trace()
 
 def main():
-	l1 = 5; l2 = 5; delta = 10**-8; beta = 10**-3; TAU = np.arange(0.1,1,0.15);  
-	W = np.ones(len(TAU)) * 10**-10;
-	# W = (3-np.sqrt(8)) * TAU - 10**-10
+	l1 = 5; l2 = 5; delta = 10**-8; beta = 10**-3; 
+	FixTau = 0; # 1 for fixing tau otherwise fixing w 
+	if FixTau == 1:
+		Tau = 0.1
+		W = np.linspace(10**-10, 1.6*10**-2, num=20)
+		TAU = np.ones(len(W)) * Tau
+	else:
+		TAU = np.linspace(0.1,0.7,num=20);  
+		W = np.ones(len(TAU)) * 10**-10;
+
 	GAMMA = ((3-np.sqrt(8)) * TAU - W) * 0.99
 	S1 = np.zeros(len(TAU)); S2 = np.zeros(len(TAU))
 	for i in range(len(TAU)): 
@@ -198,6 +210,9 @@ def main():
 		S1[i] = GetPassiveComplexity2(tau, w, beta, l1 , l2, gamma, delta)
 		S2[i] = GetActiveQueryComplexity(tau, w, beta, l1 , l2, gamma, delta, beta)
 	# pdb.set_trace()
-	PlotComparison(TAU[::-1], S1[::-1], S2[::-1])
+	if FixTau == 1:
+		PlotComparison(W, S1, S2, 'w')
+	else:
+		PlotComparison(TAU, S1, S2, r'$\tau$')
 if __name__ == '__main__':
 	main()

@@ -253,25 +253,17 @@ def GetVRDiagram(Data, Scale):
 	# Diagrams = ripser(Data[:, :-1], distance_matrix=False, do_cocycles = True)
 	return Diagrams, FineDist
 
-def GetTopologicalRips(Data, Args, Base=0):
+def GetTopologicalRips(QueryIndex, Data, Args, StatsPath, FigurePath):
 	"""
 	Data: A list of clustered data. Dataset
 	Comp: str. Complex type
 	Graph: str. Graph type
-	Base: int. Base ripser options
+	QueryIndex: a list of query index
+	StatsPath: str. Path to stats
+	FigurePath: str. Path to Figure
 	"""
-	if Base == 0:
-		Path = os.getcwd() + '/Figures/%s/%s/Tau%.2f/OverlapWidth%.2f/%s/PD/%s/'%(Args.Exp, Args.DataType, Args.Tau, Args.W, Args.Comp, Args.Graph)
-		if Args.Graph == 'Radius':
-			R = Args.R # radius
-		elif Args.Graph =='NN':
-			R = Args.K # opposite neighbour number
-	elif Base == 1:
-		Path = os.getcwd() + '/Figures/%s/%s/Tau%.2f/OverlapWidth%.2f(Base)/%s/PD/%s/'%(Args.Exp, Args.DataType, Args.Tau, Args.BW, Args.Comp, Args.Graph)
-		if Args.Graph == 'Radius':
-			R = [Args.BR] # radius
-		elif Args.Graph =='NN':
-			R = [Args.BK] # opposite neighbour number
+
+	Path = StatsPath + 'PD/'
 
 	if not os.path.exists(Path):
 		os.makedirs(Path)
@@ -281,80 +273,75 @@ def GetTopologicalRips(Data, Args, Base=0):
 		with open(Path + 'Ripsers.txt', 'rb') as fp:
 			LListRips = pickle.load(fp)
 	else: 
+		
 		LListNewDist = []
 		LListRips = []
-		for r in R:
-			if Args.Graph == 'NN':
-				print('Base option:%d, Opposite label number: %d, complex type: %s, Getting persistence diagrams...'%(Base, r, Args.Comp))
-			else:
-				print('Base option:%d, Radius: %.2f, complex type: %s, Getting persistence diagrams...'%(Base, r, Args.Comp))
-				# if Base == 0:
-				# 	Args.S = (Args.BW / 2 + r + Args.Tau - np.sqrt((Args.W / 2 + r ) ** 2 + (Args.Tau)**2\
-				# 	          - 6 * Args.Tau*(Args.W / 2 + r )))/2 + 1e-10 # calculated lowest epsilon
-				# 	Args.L = ((np.sqrt(9) -np.sqrt(8)) + Args.Tau + np.sqrt((np.sqrt(9) -np.sqrt(8)) ** 2 + (Args.Tau)**2\
-				# 	          - 6 * Args.Tau*(np.sqrt(9) -np.sqrt(8))))/2 - 1e-10# calculated largest epsilon
-				# else:
-				# 	Args.S = (Args.BW / 2 + r + Args.Tau - np.sqrt((Args.BW / 2 + r ) ** 2 + (Args.Tau)**2\
-				# 	          - 6 * Args.Tau*(Args.BW / 2 + r )))/2 + 1e-10 # calculated lowest epsilon
-				# 	Args.L = ((np.sqrt(9) -np.sqrt(8)) + Args.Tau + np.sqrt((np.sqrt(9) -np.sqrt(8)) ** 2 + (Args.Tau)**2\
-				# 	          - 6 * Args.Tau*(np.sqrt(9) -np.sqrt(8))))/2 - 1e-10# calculated largest epsilon			
-			Scale = np.linspace(Args.S, Args.L, Args.N)
+
+		if Args.Graph == 'NN':
+			R = Args.K
+			print('Opposite label number: %d, complex type: %s, Getting persistence diagrams...'%(R, Args.Comp))
+		else:
+			R = Args.R
+			print('Radius: %.2f, complex type: %s, Getting persistence diagrams...'%(R, Args.Comp))
+		
+		Scale = np.linspace(Args.S, Args.L, Args.N)
+		Per = np.arange(0.05, Args.Per + 0.05, 0.05)
+		for P in Per:
+			QueryData = [] 
 			ListRips = []
 			ListNewDist = []
 			Index = []
-			
-			for CData in Data:
+			for d, CData in zip(QueryIndex, Data):
+				QueryData.append(CData[np.uint16(d[:int(len(CData)*P)])])	
+
+			for CData in QueryData:
 				Feat = CData[:, :-1]
 				Lab = CData[:, -1]
 				if Args.Comp == 'LVR':
-
-					Rips, NewDist = GetLVRDiagram(CData, Scale, r)
-
+					Rips, NewDist = GetLVRDiagram(CData, Scale, R)
 				elif Args.Comp == 'VR':
-					CIndex = RemoveBoundary(CData, Args.Graph, r)
+					CIndex = RemoveBoundary(CData, Args.Graph, R)
 					Rips, NewDist = GetVRDiagram(CData[CIndex], Scale)		
 					Index.append(CIndex)
 				ListRips.append(Rips)
 				ListNewDist.append(NewDist)
+			
 			if Args.Comp == 'VR' and Args.DrawBoundary:
-				DrawOverlap(Args, Data, r, Index, Base) # draw covering region
+				DrawOverlap(Args, QueryData, P, R, Index, FigurePath) # draw covering region
+
 			if Args.DrawPD:
-				DrawPD(Args, ListRips, r, Base) # draw persistence diagrams
+				DrawPD(Args, ListRips, P, R, FigurePath) # draw persistence diagrams
+
 			LListRips.append(ListRips)
 			LListNewDist.append(ListNewDist)
-		with open(Path + 'Ripsers.txt', 'wb') as rp:
-			pickle.dump(LListRips, rp)
+			print('%d%% unlabelled data pool used...'%(P * 100))
+	
+	with open(Path + 'Ripsers.txt', 'wb') as rp:
+		pickle.dump(LListRips, rp)
 	return LListRips
 
-def GetBetti(Rips, Args, Base = 0):
+def GetBetti(Rips, Args, StatsPath, FigurePath):
 	"""
 	Rips: List. List of ripsers
 	Comp: str. Complex type
 	NT: float. noise removel threshold.
-	Base: int. Base or non base case
+	StatsPath: str. Path to stats
+	FigurePath: str. Path to Figure
 	"""
-	print('Base:%d, Getting betti number...'%Base)
-	if Base == 0:
-		if Args.Graph == 'Radius':
-			R = Args.R
-		elif Args.Graph == 'NN':
-			R = Args.K
-	elif Base ==1:
-		if Args.Graph == 'Radius':
-			R = [Args.BR]
-		elif Args.Graph == 'NN':
-			R = [Args.BK]
-	BettinumDic = {} # store betti number information where each key represents radius 
-					 # and the content represent betti number in each number. 
+	print('Getting betti number...')
 
-	for ri, r in zip(Rips, R):
-		BettinumDic[r] = []
-
-		for ri1 in ri:
-
-			Scale = np.linspace(Args.S, Args.L, Args.N)
-			Bettinum = np.zeros((2, len(Scale)))
-			
+	Path = StatsPath + 'NT%.2f/Bettinumber/'%Args.NT
+	if not os.path.exists(Path):
+		os.makedirs(Path)
+	BettinumDic = {} # store betti number information where each key represents proportion of  
+					 # unlabelled data and the content represent betti number in each number. 
+	# Per = np.arange(0.05, 1.05, 0.05)
+	Per = np.arange(0.05, Args.Per + 0.05, 0.05)
+	Scale = np.linspace(Args.S, Args.L, Args.N)	
+	for ri, p in zip(Rips, Per):
+		BettinumDic[p] = []
+		Bettinum = np.zeros((2, len(Scale)))
+		for ri1 in ri:	
 			if ri1 != None:
 				if Args.Comp == 'LVR':
 					CBettinum = LVRCountBetti2(ri1, Scale, Args.NT)
@@ -362,16 +349,9 @@ def GetBetti(Rips, Args, Base = 0):
 					CBettinum = VRCountBetti(ri1, Scale, Args.NT)
 				Bettinum[0] +=CBettinum[0]
 				Bettinum[1] +=CBettinum[1]
-			BettinumDic[r].append(Bettinum)
-			DrawBarcode(Args, Bettinum, r)
-	
-
-	if Base == 0:
-		Path = os.getcwd() + '/Figures/%s/%s/Tau%.2f/OverlapWidth%.2f/%s/Bettinumber/%s/NT%.2f/Dic/'%(Args.Exp, Args.DataType, Args.Tau, Args.W, Args.Comp, Args.Graph, Args.NT)
-	elif Base == 1:
-		Path = os.getcwd() + '/Figures/%s/%s/Tau%.2f/OverlapWidth%.2f(Base)/%s/Bettinumber/%s/NT%.2f/Dic/'%(Args.Exp, Args.DataType, Args.Tau, Args.BW, Args.Comp, Args.Graph, Args.NT)
-	if not os.path.exists(Path):
-		os.makedirs(Path)
+			BettinumDic[p].append(Bettinum)
+		print('%d%% unlabelled data pool used...'%(p * 100))
+		DrawBarcode(Args, Bettinum, p, FigurePath)
 	with open(Path + 'BettiTrial%d.txt'%(Args.Trial), 'wb') as rp:
 		pickle.dump(BettinumDic, rp)
 	return Bettinum
@@ -467,44 +447,46 @@ def VRCountBetti(rips, Scale, NT):
 		bc[dim] = bettiCounts(dims, birth_values, death_values, filtValues, dim)
 	return bc
 
-def GetPDDist(BaseRips, Rips, args):
+def GetPDDist(BaseRips, Rips, args, StatsPath, FigurePath):
 	"""
 	BaseRips: Dic. Base Ripser
 	Rips: Dic. Different ripser information
+	StatsPath: str. Path to stats
+	FigurePath: str. Path to Figure
 	"""
 	print('Getting %s distance...'%(args.Dist))
 
-	if args.Graph == 'Radius':
-		L = len(args.R)
-	elif args.Graph == 'NN':
-		L = len(args.K)
 
-
-	Path = os.getcwd() + '/Figures/%s/%s/Tau%.2f/OverlapWidth%.2f/%s/%s/%s/Dic/'%(args.Exp, args.DataType, args.Tau, args.W, args.Comp, args.Dist, args.Graph)
-
+	Path = StatsPath + args.Dist
+	Per = np.arange(0.05, args.Per + 0.05, 0.05)
 	if not os.path.exists(Path):
 		os.makedirs(Path)
-
-	PDDist = {}
+	PDDist = []
+	BaseDgms = [np.zeros((0, 2)), np.zeros((0, 2))]
+	Dist0 = np.zeros(len(Per))
+	Dist1 = np.zeros(len(Per))
 	for c in range(args.C):
-		BaseDgms = BaseRips[c]['dgms']
-		Dist0 = np.zeros(L)
-		Dist1 = np.zeros(L)
-		PDDist['Cluster%d'%c] = []
-		for l in range(L):
-			if args.Dist == 'Bottleneck':
-				Dist0[l] = persim.bottleneck(BaseDgms[0], Rips[l][c]['dgms'][0])
-				Dist1[l] = persim.bottleneck(BaseDgms[1], Rips[l][c]['dgms'][1])
-			elif args.Dist =='Wasserstein':
-				Dist0[l] =  persim.sliced_wasserstein(BaseDgms[0], Rips[l][c]['dgms'][0])
-				Dist1[l] =  persim.sliced_wasserstein(BaseDgms[1], Rips[l][c]['dgms'][1])
-			elif args.Dist == 'Heat':
-				Dist0[l] =  persim.heat(BaseDgms[0], Rips[l][c]['dgms'][0])
-				Dist1[l] =  persim.heat(BaseDgms[1], Rips[l][c]['dgms'][1])
-		PDDist['Cluster%d'%c].extend((Dist0, Dist1))
+		for i, dgm in enumerate(BaseRips[c]['dgms']):
+			BaseDgms[i] = np.vstack([BaseDgms[i], dgm])
 
-		if args.DrawDist:
-			DrawPDDist(args, Dist0, Dist1, c)
+	for l in range(len(Per)):
+		ComparedDgms = [np.zeros((0, 2)), np.zeros((0, 2))]
+		for c in range(args.C):
+			for i, dgm in enumerate(Rips[l][c]['dgms']):
+				ComparedDgms[i] = np.vstack([ComparedDgms[i], dgm])
+		if args.Dist == 'Bottleneck':
+			Dist0[l] = persim.bottleneck(BaseDgms[0], ComparedDgms[0])
+			Dist1[l] = persim.bottleneck(BaseDgms[1], ComparedDgms[1])
+		elif args.Dist =='Wasserstein':
+			Dist0[l] =  persim.sliced_wasserstein(BaseDgms[0], ComparedDgms[0])
+			Dist1[l] =  persim.sliced_wasserstein(BaseDgms[1], ComparedDgms[1])
+		elif args.Dist == 'Heat':
+			Dist0[l] =  persim.heat(BaseDgms[0], ComparedDgms[0])
+			Dist1[l] =  persim.heat(BaseDgms[1], ComparedDgms[1])
+	PDDist.extend((Dist0, Dist1))
+
+	if args.DrawDist:
+		DrawPDDist(args, Dist0, Dist1, FigurePath)
 	with open(Path + 'DistTrial%d.txt'%(args.Trial), 'wb') as rp:
 		pickle.dump(PDDist, rp)
 	
