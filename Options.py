@@ -13,7 +13,7 @@ parser.add_argument('--S', type = float, default = 0, help = 'Smallest filtering
 
 parser.add_argument('--L', type = float, default = 1.5, help = 'Largest filtering scale')
 
-parser.add_argument('--NT', type = int, default = 0.1, help = 'Noise removal threshold')
+parser.add_argument('--NT', type = float, default = 0.1, help = 'Noise removal threshold')
 
 parser.add_argument('--K', type = int, default = 15 , help = 'number of considered nearest opposite neighbors')
 

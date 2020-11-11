@@ -297,11 +297,19 @@ def GetDirectory(Args, Name):
 	"""
 	print('Getting %s directory...'%Name)
 	if Args.Graph == 'Radius':
-		StatsPath = os.getcwd() + '/Stats/%s/%s/Radius(S2)=%.2f/%s/%s/Radius=%.2f/'%(Args.DataType, Name, Args.r, Args.Comp, Args.Graph, Args.R)
-		FigurePath = os.getcwd() + '/Figure/%s/%s/Radius(S2)=%.2f/%s/%s/Radius=%.2f/'%(Args.DataType, Name, Args.r, Args.Comp, Args.Graph, Args.R)
+		if Name == 'Active':
+			StatsPath = os.getcwd() + '/Stats/%s/%s/Radius(S2)=%.2f/%s/%s/Radius=%.2f/'%(Args.DataType, Name, Args.r, Args.Comp, Args.Graph, Args.R)
+			FigurePath = os.getcwd() + '/Figure/%s/%s/Radius(S2)=%.2f/%s/%s/Radius=%.2f/'%(Args.DataType, Name, Args.r, Args.Comp, Args.Graph, Args.R)
+		elif Name == 'Passive':
+			StatsPath = os.getcwd() + '/Stats/%s/%s/%s/%s/Radius=%.2f/'%(Args.DataType, Name, Args.Comp, Args.Graph, Args.R)
+			FigurePath = os.getcwd() + '/Figure/%s/%s/%s/%s/Radius=%.2f/'%(Args.DataType, Name, Args.Comp, Args.Graph, Args.R)			
 	elif Args.Graph =='NN':
-		StatsPath = os.getcwd() + '/Stats/%s/%s/Radius(S2)=%.2f/%s/%s/Neighbor numbers=%d/'%(Args.DataType, Name, Args.r, Args.Comp, Args.Graph, Args.K)
-		FigurePath = os.getcwd() + '/Figure/%s/%s/Radius(S2)=%.2f/%s/%s/Neighbor numbers=%d/'%(Args.DataType, Name, Args.r, Args.Comp, Args.Graph, Args.K)
+		if Name == 'Active':
+			StatsPath = os.getcwd() + '/Stats/%s/%s/Radius(S2)=%.2f/%s/%s/Neighbor numbers=%d/'%(Args.DataType, Name, Args.r, Args.Comp, Args.Graph, Args.K)
+			FigurePath = os.getcwd() + '/Figure/%s/%s/Radius(S2)=%.2f/%s/%s/Neighbor numbers=%d/'%(Args.DataType, Name, Args.r, Args.Comp, Args.Graph, Args.K)
+		elif Name == 'Passive':
+			StatsPath = os.getcwd() + '/Stats/%s/%s/%s/%s/Neighbor numbers=%d/'%(Args.DataType, Name, Args.Comp, Args.Graph, Args.K)
+			FigurePath = os.getcwd() + '/Figure/%s/%s/%s/%s/Neighbor numbers=%d/'%(Args.DataType, Name, Args.Comp, Args.Graph, Args.K)
 	if Name == 'Passive':
 		FigurePath2 = os.getcwd() + '/Figure/%s/%s/'%(Args.DataType, Name)
 	elif Name == 'Active':
