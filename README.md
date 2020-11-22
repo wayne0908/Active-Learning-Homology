@@ -1,5 +1,5 @@
 # Active-Learning-Homology
-This is a project for the paper entitled "Finding the Homology of Decision Boundaries with Active Learning" in NeurIPS2020
+This is a project for the paper entitled "Finding the Homology of Decision Boundaries with Active Learning" in NeurIPS2020. [Link to full paper](https://arxiv.org/pdf/2011.09645.pdf)  
 
 **Running environment and required packages**
 
